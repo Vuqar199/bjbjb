@@ -1,0 +1,94 @@
+
+
+
+2. API vasitəsilə Məlumat Çəkmək və Bazaya Yazmaq
+
+Əgər hədəf sayt API təqdim edirsə, REST API və ya GraphQL API ilə məlumatları çəkmək daha asan və effektivdir.
+
+2.1 Lazımi kitabxanaları quraşdırın
+
+Əgər API-dən JSON formatında məlumat alırsınızsa, requests kitabxanası kifayətdir.
+
+pip install requests
+
+2.2 API-dən Məlumat Çəkmək və Django Modelinə Yerləşdirmək
+
+Aşağıdakı skript, API-dən JSON məlumatı alıb Django bazasına yazacaq:
+
+import requests
+from yourapp.models import News  # Django modelinizi import edin
+
+def fetch_news():
+    api_url = "https://example.com/api/news"  # Buraya API-nin URL-sini yazın
+    response = requests.get(api_url)
+    
+    if response.status_code == 200:
+        data = response.json()  # JSON formatını oxuyuruq
+        
+        for item in data:  
+            title = item["title"]
+            content = item["description"]
+            article_url = item["url"]
+
+            # Məlumatı bazaya əlavə et (əgər mövcud deyilsə)
+            obj, created = News.objects.get_or_create(
+                url=article_url,
+                defaults={"title": title, "content": content}
+            )
+
+            if created:
+                print(f"Added: {title}")
+            else:
+                print(f"Already exists: {title}")
+    
+    else:
+        print(f"API error: {response.status_code}")
+
+Terminalda işlətmək üçün:
+
+python manage.py shell
+>>> from yourapp.scraper import fetch_news
+>>> fetch_news()
+
+3. CSV, JSON və ya XML Fayllarından Məlumat Yükləmək
+
+Əgər məlumatları CSV və ya JSON faylı kimi əldə edirsinizsə, onları Django bazasına yükləyə bilərsiniz.
+
+3.1 CSV Faylını Django Modelinə Yerləşdirmək
+
+Əgər CSV faylınız belədirsə:
+
+title,content,url
+"First News","Some content","https://example.com/news1"
+"Second News","Other content","https://example.com/news2"
+
+Kod:
+
+import csv
+from yourapp.models import News
+
+def import_csv():
+    with open("news.csv", newline="", encoding="utf-8") as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            obj, created = News.objects.get_or_create(
+                url=row["url"],
+                defaults={"title": row["title"], "content": row["content"]}
+            )
+            if created:
+                print(f"Added: {row['title']}")
+            else:
+                print(f"Already exists: {row['title']}")
+
+Terminalda işlətmək üçün:
+
+python manage.py shell
+>>> from yourapp.scraper import import_csv
+>>> import_csv()
+
+Nəticə
+	•	Web Scraping (BeautifulSoup, Selenium) ilə API olmayan saytlardan məlumat çəkə bilərsiniz.
+	•	REST API və ya GraphQL API varsa, JSON məlumatlarını rahatlıqla Django modelinə yazmaq mümkündür.
+	•	CSV və ya JSON fayllarını oxuyaraq, məlumatları bazaya yükləyə bilərsiniz.
+
+Bu üsullardan ehtiyacınıza uyğun olanını seçib istifadə edə bilərsiniz.
